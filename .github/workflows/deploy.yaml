@@ -39,7 +39,13 @@ jobs:
 
       - name: Run unit tests
         run: |
-          python -m pytest
+          python -m pytest --cov=. --cov-report=html
+
+      - name: Upload coverage report as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: htmlcov/
 
       - name: Build and test Docker image
         run: |
@@ -102,3 +108,20 @@ jobs:
           tags: |
             rubengonzlez17/wallet-service:${{ steps.get_version.outputs.NEW_VERSION }}
             rubengonzlez17/wallet-service:latest
+
+      - name: Download coverage report artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+          path: htmlcov/
+
+      - name: Deploy coverage to GitHub Pages
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git fetch origin gh-pages || git checkout --orphan gh-pages
+
+          mv htmlcov/* .
+          git add .
+          git commit -m "Deploy coverage report"
+          git push origin gh-pages --force
