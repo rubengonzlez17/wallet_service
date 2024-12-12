@@ -41,6 +41,15 @@ jobs:
         run: |
           python -m pytest
 
+      - name: Build and test Docker image
+        run: |
+          docker build -t django-app .
+          docker run -d --name django-container -p 8000:8000 django-app
+          docker ps
+          docker exec django-container python manage.py test
+          docker stop django-container
+          docker rm django-container
+
       - name: Deploy on local
         run: |
           python manage.py runserver &
