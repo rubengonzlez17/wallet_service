@@ -1,0 +1,95 @@
+name: Django Application
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+
+jobs:
+  checks-and-deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # Fetch all history including tags
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run migrations
+        run: |
+          python manage.py makemigrations
+          python manage.py migrate
+
+      - name: Run unit tests
+        run: |
+          python -m pytest
+
+      - name: Deploy on local
+        run: |
+          python manage.py runserver &
+
+  semantic-release-and-push-docker-image:
+    needs: checks-and-deploy
+    runs-on: ubuntu-latest
+
+    permissions:
+      actions: write
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Bump version using semantic-release
+        uses: python-semantic-release/python-semantic-release@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          repo_dir: '.'
+
+      - name: Get new version from Git tags
+        id: get_version
+        run: |
+          VERSION=$(git describe --tags --abbrev=0)
+          echo "::set-output name=NEW_VERSION::$VERSION"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          tags: |
+            rubengonzlez17/wallet-service:${{ steps.get_version.outputs.NEW_VERSION }}
+            rubengonzlez17/wallet-service:latest
