@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - develop
+      - add-coverage-reports-in-gh-pages
   pull_request:
 
 jobs:
