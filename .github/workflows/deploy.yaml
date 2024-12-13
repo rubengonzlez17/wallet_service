@@ -40,7 +40,7 @@ jobs:
 
       - name: Run unit tests
         run: |
-          python -m pytest --cov=. --cov-report=html
+          python -m pytest --cov=. --cov-report=html --cov-config=.coveragerc
 
       - name: Upload coverage report as artifact
         uses: actions/upload-artifact@v4
