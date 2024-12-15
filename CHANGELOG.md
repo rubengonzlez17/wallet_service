@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v1.2.0 (2024-12-15)
+
+### Features
+
+- Add new endpoint to view transactions of a user
+  ([`892bef6`](https://github.com/rubengonzlez17/wallet_service/commit/892bef6fa91b9bf6f736b70825e03e3599ddf2a6))
+
+
 ## v1.1.0 (2024-12-15)
 
 ### Bug Fixes
