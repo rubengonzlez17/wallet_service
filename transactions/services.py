@@ -9,14 +9,14 @@ class TransactionService:
     @staticmethod
     def validate_and_process_transaction(wallet_token, transaction_type, amount, commerce=None):
         if not wallet_token or not transaction_type or amount is None:
-            raise ValidationError('Missing required fields: wallet, transaction_type, or amount.')
+            raise ValidationError('Missing required fields: wallet, transaction_type, or amount')
 
         if transaction_type not in ['RECHARGE', 'CHARGE']:
-            raise ValidationError("Invalid transaction_type. Must be 'RECHARGE' or 'CHARGE'.")
+            raise ValidationError("Invalid transaction_type. Must be 'RECHARGE' or 'CHARGE'")
 
         amount = float(amount)
         if amount <= 0:
-            raise ValidationError('The transaction amount must be greater than zero.')
+            raise ValidationError('The transaction amount must be greater than zero')
 
         try:
             wallet = Wallet.objects.get(token=wallet_token)
@@ -41,3 +41,24 @@ class TransactionService:
             amount=amount,
             commerce=commerce if transaction_type == 'CHARGE' else None
         )
+
+    @staticmethod
+    def get_transactions(user, wallet_token=None):
+        wallets = Wallet.objects.filter(user=user)
+        if not wallets.exists():
+            raise NotFound('No wallets found for the user')
+
+        if wallet_token:
+            transactions = Transaction.objects.filter(
+                wallet__token=wallet_token).order_by('-created_at')
+        else:
+            transactions = Transaction.objects.filter(
+                wallet__in=wallets).order_by('-created_at')
+
+        if not transactions.exists():
+            if wallet_token:
+                raise NotFound('Wallet not found')
+
+            raise NotFound('No transactions found')
+
+        return transactions

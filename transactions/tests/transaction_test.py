@@ -170,3 +170,100 @@ class TestTransactionCreateView:
         response = client.post(self.endpoint, data)
         assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         assert 'Unexpected error' in response.data['detail']
+
+
+@pytest.mark.django_db
+class TestWalletTransactionsView:
+    url = '/api/transactions/'
+
+    def test_get_wallet_transactions_successfully(self, auth_client, wallet):
+        client, user = auth_client
+
+        _ = Transaction.objects.create(
+            wallet=wallet,
+            transaction_type='CHARGE',
+            amount=100.0
+        )
+        _ = Transaction.objects.create(
+            wallet=wallet,
+            transaction_type='CHARGE',
+            amount=50.0
+        )
+
+        response = client.get(self.url,
+                              {'wallet': wallet.token},
+                              format='json')
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 2
+
+    def test_get_wallet_transactions_without_wallet_param(self,
+                                                          auth_client,
+                                                          wallet):
+        client, user = auth_client
+
+        _ = Transaction.objects.create(
+            wallet=wallet,
+            transaction_type='CHARGE',
+            amount=100.0
+        )
+
+        wallet2 = Wallet.objects.create(user=user,
+                                        balance=1000.0,
+                                        token='test-wallet-token-2')
+
+        _ = Transaction.objects.create(
+            wallet=wallet2,
+            transaction_type='CHARGE',
+            amount=100.0
+        )
+
+        response = client.get(self.url, format='json')
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 2
+
+    def test_get_wallet_transactions_not_authenticated(self, api_client):
+        response = api_client.get(
+            self.url, format='json')
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_get_wallet_transactions_not_belongs_to_user(self,
+                                                         auth_client,
+                                                         wallet):
+        client, _ = auth_client
+
+        other_user = User.objects.create_user(
+            username='otheruser',
+            email='otheruser@example.com',
+            password='password456'
+        )
+        other_wallet = Wallet.objects.create(
+            user=other_user, balance=500.0, token='other-wallet-token')
+
+        response = client.get(
+            self.url, {'wallet': other_wallet.token}, format='json')
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data['detail'] == 'Wallet not found'
+
+    def test_get_wallet_transactions_no_wallets_found(self, auth_client):
+        client, _ = auth_client
+
+        response = client.get(
+            self.url, {'wallet': 'invalid-token'}, format='json')
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data['detail'] == 'No wallets found for the user'
+
+    def test_get_wallet_transactions_no_transactions(self,
+                                                     auth_client,
+                                                     wallet):
+        client, _ = auth_client
+
+        response = client.get(
+            self.url, format='json')
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data['detail'] == 'No transactions found'
