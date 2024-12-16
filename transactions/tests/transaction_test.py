@@ -25,11 +25,30 @@ def auth_client(api_client):
 
 
 @pytest.fixture
+def auth_commerce(api_client):
+    user = get_user_model().objects.create_user(
+        username='testcommerce',
+        email='testcommerce@example.com',
+        password='password123'
+    )
+    api_client.force_authenticate(user)
+    return api_client, user
+
+
+@pytest.fixture
 def wallet(auth_client):
     _, user = auth_client
     return Wallet.objects.create(user=user,
                                  balance=100.0,
                                  token='test-wallet-token')
+
+
+@pytest.fixture
+def commerce_wallet(auth_commerce):
+    _, user = auth_commerce
+    return Wallet.objects.create(user=user,
+                                 balance=200.0,
+                                 token='commerce-wallet-token')
 
 
 @pytest.mark.django_db
@@ -48,8 +67,11 @@ class TestTransactionCreateView:
         assert response.data['transaction_type'] == 'RECHARGE'
         assert float(response.data['amount']) == 50.0
 
-    def test_create_charge_transaction_success(self, auth_client, wallet):
-        client, _ = auth_client
+    def test_create_charge_transaction_success(self,
+                                               wallet,
+                                               auth_commerce,
+                                               commerce_wallet):
+        client, _ = auth_commerce
         data = {
             'wallet': wallet.token,
             'transaction_type': 'CHARGE',
@@ -60,10 +82,24 @@ class TestTransactionCreateView:
         assert response.data['transaction_type'] == 'CHARGE'
         assert float(response.data['amount']) == 50.0
 
+        customer_transaction = Transaction.objects.filter(
+            wallet=wallet, transaction_type='CHARGE').first()
+        commerce_transaction = Transaction.objects.filter(
+            wallet=commerce_wallet, transaction_type='CHARGE').first()
+
+        assert customer_transaction is not None
+        assert commerce_transaction is not None
+
+        assert float(customer_transaction.amount) == -50.0
+        assert float(commerce_transaction.amount) == 50.0
+
+        assert commerce_transaction.origin_wallet == wallet
+
     def test_create_charge_transaction_insufficient_funds(self,
-                                                          auth_client,
-                                                          wallet):
-        client, _ = auth_client
+                                                          wallet,
+                                                          auth_commerce,
+                                                          commerce_wallet):
+        client, _ = auth_commerce
         data = {
             'wallet': wallet.token,
             'transaction_type': 'CHARGE',
