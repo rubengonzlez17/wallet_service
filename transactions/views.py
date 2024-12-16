@@ -2,6 +2,8 @@ from rest_framework import status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 from .serializers import TransactionSerializer
 from .services import TransactionService
@@ -32,6 +34,15 @@ class TransactionCreateView(generics.CreateAPIView):
 class WalletTransactionsView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter('wallet',
+                              openapi.IN_QUERY,
+                              description='Token of the wallet',
+                              type=openapi.TYPE_STRING,
+                              required=False)
+        ]
+    )
     @handle_errors
     def get(self, request):
         wallet_token = request.query_params.get('wallet')
