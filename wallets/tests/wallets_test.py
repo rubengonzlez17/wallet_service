@@ -59,7 +59,7 @@ class TestWalletCreation:
         }
 
         response = api_client.post(self.endpoint, data, format='json')
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_create_wallet_with_negative_balance(self, auth_client):
         client, _ = auth_client
@@ -95,7 +95,7 @@ class TestWalletStatus:
     def test_get_wallets_not_authenticated(self, api_client):
         response = api_client.get(self.endpoint, format='json')
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_get_wallets_no_wallets_found(self, auth_client):
         client, _ = auth_client

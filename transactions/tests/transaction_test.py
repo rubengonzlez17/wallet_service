@@ -85,7 +85,7 @@ class TestTransactionCreateView:
             'amount': 50.0
         }
         response = client.post(self.endpoint, data)
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
         assert 'You cannot recharge a wallet' in response.data['detail']
 
     def test_create_charge_transaction_success(self,
@@ -207,7 +207,7 @@ class TestTransactionCreateView:
             'amount': 50.0
         }
         response = api_client.post(self.endpoint, data)
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_create_transaction_wallet_not_found(self, auth_client):
         client, _ = auth_client
@@ -311,7 +311,7 @@ class TestWalletTransactionsView:
         response = api_client.get(
             self.url, format='json')
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_get_wallet_transactions_not_belongs_to_user(self,
                                                          auth_client,
