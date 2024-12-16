@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v1.2.2 (2024-12-16)
+
+### Bug Fixes
+
+- Fix user registration by ensuring passwords are encrypted during user creation.
+  ([`756de4e`](https://github.com/rubengonzlez17/wallet_service/commit/756de4e1846d29bccbafef0b83e19b839669b422))
+
+
 ## v1.2.1 (2024-12-16)
 
 ### Bug Fixes
