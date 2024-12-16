@@ -34,7 +34,7 @@ Depende del caso de uso:
 
 ---
 
-### 5. **Métricas y servicios para comprobar el funcionamiento**
+### 4. **Métricas y servicios para comprobar el funcionamiento**
 
 - **Métricas principales:**
     - **Latencia:** Tiempos de respuesta de la API.
