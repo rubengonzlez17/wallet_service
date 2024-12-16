@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v1.6.0 (2024-12-16)
+
+### Features
+
+- Add tests for services, models & serializers in Wallet app
+  ([`6f9535d`](https://github.com/rubengonzlez17/wallet_service/commit/6f9535dbbdc68892607b2b0cacb1360112223149))
+
+
 ## v1.5.0 (2024-12-16)
 
 ### Documentation
