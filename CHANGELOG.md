@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v1.2.1 (2024-12-16)
+
+### Bug Fixes
+
+- Ensure proper handling of dual transactions and origin wallet tracking
+  ([`aa6fc93`](https://github.com/rubengonzlez17/wallet_service/commit/aa6fc936c20feaa7a582abfc54718c9e942aba58))
+
+
 ## v1.2.0 (2024-12-15)
 
 ### Features
