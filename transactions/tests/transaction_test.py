@@ -85,7 +85,7 @@ class TestTransactionCreateView:
             'amount': 50.0
         }
         response = client.post(self.endpoint, data)
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.status_code == status.HTTP_403_FORBIDDEN
         assert 'You cannot recharge a wallet' in response.data['detail']
 
     def test_create_charge_transaction_success(self,
