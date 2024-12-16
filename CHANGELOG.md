@@ -1,6 +1,24 @@
 # CHANGELOG
 
 
+## v1.4.0 (2024-12-16)
+
+### Bug Fixes
+
+- Fix: Exempt CSRF for /api/token/ endpoint and ensure token authentication is used in Swagger
+  ([`748e33b`](https://github.com/rubengonzlez17/wallet_service/commit/748e33b6e9fb28545e2528a60df4d9a7b92678c4))
+
+### Documentation
+
+- Add README.md with the project setup and usage instructions
+  ([`ea1e969`](https://github.com/rubengonzlez17/wallet_service/commit/ea1e9695322f6f08942c27cf43694c53684c9e7c))
+
+### Features
+
+- Improvements in transaction validation and error handling
+  ([`17f351d`](https://github.com/rubengonzlez17/wallet_service/commit/17f351d8c3b516e3b86989fa9bd31a42f1964254))
+
+
 ## v1.3.0 (2024-12-16)
 
 ### Features
