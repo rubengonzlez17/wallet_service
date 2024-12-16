@@ -1,6 +1,19 @@
 # CHANGELOG
 
 
+## v1.5.0 (2024-12-16)
+
+### Documentation
+
+- Create questions.md
+  ([`5280958`](https://github.com/rubengonzlez17/wallet_service/commit/52809582f6f6640d964d14650f7feae6e80f3b2c))
+
+### Features
+
+- Add tests for Transaction services and Transaction models
+  ([`8fff072`](https://github.com/rubengonzlez17/wallet_service/commit/8fff072a522b7799cf0ae9fad903d13eb2e728ca))
+
+
 ## v1.4.0 (2024-12-16)
 
 ### Bug Fixes
