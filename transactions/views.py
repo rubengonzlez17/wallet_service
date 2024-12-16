@@ -20,7 +20,7 @@ class TransactionCreateView(generics.CreateAPIView):
         transaction_type = request.data.get('transaction_type')
         amount = request.data.get('amount')
 
-        transaction = TransactionService.validate_and_process_transaction(
+        transaction = TransactionService.process_transaction(
             wallet_token=wallet_token,
             transaction_type=transaction_type,
             amount=amount,

@@ -1,7 +1,9 @@
 import pytest
 from rest_framework import status
 from rest_framework.test import APIClient
+from rest_framework.authtoken.models import Token
 from django.contrib.auth import get_user_model
+
 from wallets.models import Wallet
 from wallets.serializers import WalletSerializer
 
@@ -20,7 +22,9 @@ def auth_client(api_client):
         email='testuser@example.com',
         password='password123'
     )
-    api_client.force_authenticate(user)
+    token = Token.objects.create(user=user)
+    api_client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
+
     return api_client, user
 
 
@@ -55,7 +59,7 @@ class TestWalletCreation:
         }
 
         response = api_client.post(self.endpoint, data, format='json')
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_create_wallet_with_negative_balance(self, auth_client):
         client, _ = auth_client
@@ -91,7 +95,7 @@ class TestWalletStatus:
     def test_get_wallets_not_authenticated(self, api_client):
         response = api_client.get(self.endpoint, format='json')
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_get_wallets_no_wallets_found(self, auth_client):
         client, _ = auth_client

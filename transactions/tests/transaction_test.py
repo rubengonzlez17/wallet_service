@@ -1,7 +1,9 @@
 import pytest
 from rest_framework.test import APIClient
 from rest_framework import status
+from rest_framework.authtoken.models import Token
 from django.contrib.auth import get_user_model
+
 from wallets.models import Wallet
 from transactions.models import Transaction
 
@@ -12,15 +14,17 @@ User = get_user_model()
 def api_client():
     return APIClient()
 
-
 @pytest.fixture
 def auth_client(api_client):
     user = get_user_model().objects.create_user(
         username='testuser',
         email='testuser@example.com',
-        password='password123'
+        password='password123',
+        user_type='CLIENT'
     )
-    api_client.force_authenticate(user)
+    token = Token.objects.create(user=user)
+    api_client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
+
     return api_client, user
 
 
@@ -29,9 +33,12 @@ def auth_commerce(api_client):
     user = get_user_model().objects.create_user(
         username='testcommerce',
         email='testcommerce@example.com',
-        password='password123'
+        password='password123',
+        user_type='COMMERCE'
     )
-    api_client.force_authenticate(user)
+    token = Token.objects.create(user=user)
+    api_client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
+
     return api_client, user
 
 
@@ -66,6 +73,20 @@ class TestTransactionCreateView:
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data['transaction_type'] == 'RECHARGE'
         assert float(response.data['amount']) == 50.0
+
+    def test_create_recharge_transaction_for_other_wallet(self,
+                                                          commerce_wallet,
+                                                          auth_client
+                                                          ):
+        client, user = auth_client
+        data = {
+            'wallet': commerce_wallet.token,
+            'transaction_type': 'RECHARGE',
+            'amount': 50.0
+        }
+        response = client.post(self.endpoint, data)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert 'You cannot recharge a wallet' in response.data['detail']
 
     def test_create_charge_transaction_success(self,
                                                wallet,
@@ -115,13 +136,10 @@ class TestTransactionCreateView:
         assert transactions.count() == 1
         assert transactions.first().error_message == 'Insufficient funds'
 
-    def test_create_charge_transaction_fails_without_commerce_wallet(self,
-                                                                     wallet):
-        commerce_user = User.objects.create_user(username='commerce',
-                                                 email='commerce@example.com',
-                                                 password='password123')
-        client = APIClient()
-        client.force_authenticate(user=commerce_user)
+    def test_create_charge_transaction_invalid_user_type(self,
+                                                         auth_client,
+                                                         wallet):
+        client, _ = auth_client
         data = {
             'wallet': wallet.token,
             'transaction_type': 'CHARGE',
@@ -130,8 +148,23 @@ class TestTransactionCreateView:
 
         response = client.post(self.endpoint, data)
 
-        assert response.status_code == status.HTTP_404_NOT_FOUND
-        assert response.data['detail'] == 'Commerce wallet not found'
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'Only commerces can' in response.data['detail']
+
+    def test_create_charge_transaction_invalid_origin_wallet(self,
+                                                             auth_commerce,
+                                                             commerce_wallet):
+        client, _ = auth_commerce
+        data = {
+            'wallet': commerce_wallet.token,
+            'transaction_type': 'CHARGE',
+            'amount': 50.00
+        }
+
+        response = client.post(self.endpoint, data)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'Cannot charge to the commerce' in response.data['detail']
 
     def test_create_charge_transaction_amount_must_be_positive(self,
                                                                auth_client,
@@ -174,7 +207,7 @@ class TestTransactionCreateView:
             'amount': 50.0
         }
         response = api_client.post(self.endpoint, data)
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_create_transaction_wallet_not_found(self, auth_client):
         client, _ = auth_client
@@ -187,6 +220,21 @@ class TestTransactionCreateView:
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert response.data['detail'] == 'Wallet not found'
 
+    def test_create_charge_transaction_fails_without_commerce_wallet(self,
+                                                                     wallet,
+                                                                     auth_commerce):
+        client, _ = auth_commerce
+        data = {
+            'wallet': wallet.token,
+            'transaction_type': 'CHARGE',
+            'amount': 50.00
+        }
+
+        response = client.post(self.endpoint, data)
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data['detail'] == 'Commerce wallet not found'
+
     def test_create_transaction_unexpected_error(self,
                                                  mocker,
                                                  auth_client,
@@ -194,7 +242,7 @@ class TestTransactionCreateView:
         client, _ = auth_client
 
         mocker.patch(
-            'transactions.services.TransactionService.validate_and_process_transaction',
+            'transactions.services.TransactionService.process_transaction',
             side_effect=Exception('Unexpected error')
         )
 
@@ -263,7 +311,7 @@ class TestWalletTransactionsView:
         response = api_client.get(
             self.url, format='json')
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_get_wallet_transactions_not_belongs_to_user(self,
                                                          auth_client,
