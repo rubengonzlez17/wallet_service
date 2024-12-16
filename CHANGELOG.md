@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v1.3.0 (2024-12-16)
+
+### Features
+
+- Enable Swagger documentation for API
+  ([`a37c0c4`](https://github.com/rubengonzlez17/wallet_service/commit/a37c0c4550fb01ecabcb6ac0f309459f49de065e))
+
+
 ## v1.2.2 (2024-12-16)
 
 ### Bug Fixes
