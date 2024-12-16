@@ -1,7 +1,9 @@
 import pytest
 from rest_framework.test import APIClient
 from rest_framework import status
+from rest_framework.authtoken.models import Token
 from django.contrib.auth import get_user_model
+
 from wallets.models import Wallet
 from transactions.models import Transaction
 
@@ -12,7 +14,6 @@ User = get_user_model()
 def api_client():
     return APIClient()
 
-
 @pytest.fixture
 def auth_client(api_client):
     user = get_user_model().objects.create_user(
@@ -21,7 +22,9 @@ def auth_client(api_client):
         password='password123',
         user_type='CLIENT'
     )
-    api_client.force_authenticate(user)
+    token = Token.objects.create(user=user)
+    api_client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
+
     return api_client, user
 
 
@@ -33,7 +36,9 @@ def auth_commerce(api_client):
         password='password123',
         user_type='COMMERCE'
     )
-    api_client.force_authenticate(user)
+    token = Token.objects.create(user=user)
+    api_client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
+
     return api_client, user
 
 

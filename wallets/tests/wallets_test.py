@@ -1,7 +1,9 @@
 import pytest
 from rest_framework import status
 from rest_framework.test import APIClient
+from rest_framework.authtoken.models import Token
 from django.contrib.auth import get_user_model
+
 from wallets.models import Wallet
 from wallets.serializers import WalletSerializer
 
@@ -20,7 +22,9 @@ def auth_client(api_client):
         email='testuser@example.com',
         password='password123'
     )
-    api_client.force_authenticate(user)
+    token = Token.objects.create(user=user)
+    api_client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
+
     return api_client, user
 
 
