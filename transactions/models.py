@@ -22,6 +22,10 @@ class Transaction(models.Model):
         CustomUser, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='charges'
     )
+    origin_wallet = models.ForeignKey(
+        Wallet, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='outgoing_transactions'
+    )
     transaction_type = models.CharField(
         max_length=10, choices=TRANSACTION_TYPE_CHOICES
     )
@@ -40,17 +44,10 @@ class Transaction(models.Model):
             try:
                 amount = Decimal(amount)
                 if transaction_type == 'CHARGE':
-                    Transaction._handle_charge(wallet, amount, commerce)
-                elif transaction_type == 'RECHARGE':
-                    Transaction._handle_recharge(wallet, amount)
+                    return Transaction._handle_charge(wallet, amount, commerce)
 
-                return Transaction.objects.create(
-                    wallet=wallet,
-                    transaction_type=transaction_type,
-                    amount=amount,
-                    status='SUCCESS',
-                    commerce=commerce
-                )
+                return Transaction._handle_recharge(wallet, amount)
+
             except ValidationError as e:
                 return Transaction._log_failed_transaction(
                     wallet=wallet,
@@ -72,13 +69,39 @@ class Transaction(models.Model):
         commerce_wallet.balance += amount
         commerce_wallet.save()
 
+        _ = Transaction._log_success_transaction(
+            wallet=wallet,
+            transaction_type='CHARGE',
+            amount=-amount,
+            commerce=commerce,
+        )
+
+        commerce_transaction = Transaction._log_success_transaction(
+            wallet=commerce_wallet,
+            transaction_type='CHARGE',
+            amount=amount,
+            origin_wallet=wallet
+        )
+
+        return commerce_transaction
+
     @staticmethod
     def _handle_recharge(wallet, amount):
         wallet.balance += amount
         wallet.save()
 
-    @staticmethod
-    def _log_failed_transaction(wallet, transaction_type, amount, error_message, commerce=None):
+        return Transaction._log_success_transaction(
+            wallet=wallet,
+            transaction_type='RECHARGE',
+            amount=amount,
+        )
+
+    @ staticmethod
+    def _log_failed_transaction(wallet,
+                                transaction_type,
+                                amount,
+                                error_message,
+                                commerce=None):
         return Transaction.objects.create(
             wallet=wallet,
             transaction_type=transaction_type,
@@ -86,4 +109,19 @@ class Transaction(models.Model):
             status='FAILED',
             error_message=error_message,
             commerce=commerce
+        )
+
+    @ staticmethod
+    def _log_success_transaction(wallet,
+                                 transaction_type,
+                                 amount,
+                                 commerce=None,
+                                 origin_wallet=None):
+        return Transaction.objects.create(
+            wallet=wallet,
+            transaction_type=transaction_type,
+            amount=amount,
+            status='SUCCESS',
+            commerce=commerce,
+            origin_wallet=origin_wallet
         )
