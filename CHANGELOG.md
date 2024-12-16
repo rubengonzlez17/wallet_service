@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v1.7.0 (2024-12-16)
+
+### Features
+
+- Add test for serializers & models in User app
+  ([`cc5b457`](https://github.com/rubengonzlez17/wallet_service/commit/cc5b4576fad8a545210a7386f1fe69378482a8d3))
+
+
 ## v1.6.0 (2024-12-16)
 
 ### Features
